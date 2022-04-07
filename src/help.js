@@ -1210,8 +1210,17 @@ ScriptDiagramMorph.prototype.init = function (
     // initialize inherited properties:
     ScriptDiagramMorph.uber.init.call(this);
 
+    this.isDraggable = true;
+    this.isTemplate = false;
+
     this.acceptsDrops = false;
     this.populateDiagram();
+};
+
+ScriptDiagramMorph.prototype.selectForEdit = function () {
+    var newscript = this.script.fullCopy();
+    newscript.setPosition(this.position());
+    return newscript;
 };
 
 ScriptDiagramMorph.prototype.populateDiagram = function () {
