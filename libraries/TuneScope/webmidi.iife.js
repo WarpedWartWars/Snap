@@ -664,9 +664,9 @@
   }
 
   /**
-   * The `Note` class represents a single musical note such as `"D3"`, `"G#4"`, `"F-1"`, `"Gb7"`, etc.
+   * The `_Note` class represents a single musical note such as `"D3"`, `"G#4"`, `"F-1"`, `"Gb7"`, etc.
    *
-   * `Note` objects can be played back on a single channel by calling
+   * `_Note` objects can be played back on a single channel by calling
    * [`OutputChannel.playNote()`]{@link OutputChannel#playNote} or, on multiple channels of the same
    * output, by calling [`Output.playNote()`]{@link Output#playNote}.
    *
@@ -1204,14 +1204,14 @@
       return notes[number % 12] + octave.toString();
     }
     /**
-     * Converts the `input` parameter to a valid [`Note`]{@link Note} object. The input usually is an
+     * Converts the `input` parameter to a valid [`_Note`]{@link _Note} object. The input usually is an
      * unsigned integer (0-127) or a note identifier (`"C4"`, `"G#5"`, etc.). If the input is a
-     * [`Note`]{@link Note} object, it will be returned as is.
+     * [`_Note`]{@link _Note} object, it will be returned as is.
      *
      * If the input is a note number or identifier, it is possible to specify options by providing the
      * `options` parameter.
      *
-     * @param [input] {number|string|Note}
+     * @param [input] {number|string|_Note}
      *
      * @param {object} [options={}]
      *
@@ -1226,7 +1226,7 @@
      * @param {number} [options.octaveOffset=0] An integer to offset the octave by. **This is only
      * used when the input value is a note identifier.**
      *
-     * @returns {Note}
+     * @returns {_Note}
      *
      * @throws TypeError The input could not be parsed to a note
      *
@@ -1236,9 +1236,9 @@
 
 
     static buildNote(input, options = {}) {
-      options.octaveOffset = parseInt(options.octaveOffset) || 0; // If it's already a Note, we're done
+      options.octaveOffset = parseInt(options.octaveOffset) || 0; // If it's already a _Note, we're done
 
-      if (input instanceof Note) return input;
+      if (input instanceof _Note) return input;
       let number = this.guessNoteNumber(input, options.octaveOffset);
 
       if (number === false) {
@@ -1249,18 +1249,18 @@
 
 
       options.octaveOffset = undefined;
-      return new Note(number, options);
+      return new _Note(number, options);
     }
     /**
      * Converts an input value, which can be an unsigned integer (0-127), a note identifier, a
-     * [`Note`]{@link Note}  object or an array of the previous types, to an array of
-     * [`Note`]{@link Note}  objects.
+     * [`_Note`]{@link _Note}  object or an array of the previous types, to an array of
+     * [`_Note`]{@link _Note}  objects.
      *
-     * [`Note`]{@link Note}  objects are returned as is. For note numbers and identifiers, a
-     * [`Note`]{@link Note} object is created with the options specified. An error will be thrown when
+     * [`_Note`]{@link _Note}  objects are returned as is. For note numbers and identifiers, a
+     * [`_Note`]{@link _Note} object is created with the options specified. An error will be thrown when
      * encountering invalid input.
      *
-     * @param [notes] {number|string|Note|number[]|string[]|Note[]}
+     * @param [notes] {number|string|_Note|number[]|string[]|_Note[]}
      *
      * @param {object} [options={}]
      *
@@ -1282,7 +1282,7 @@
      * @param {number} [options.octaveOffset=0] An integer to offset the octave by. **This is only
      * used when the input value is a note identifier.**
      *
-     * @returns {Note[]}
+     * @returns {_Note[]}
      *
      * @throws TypeError An element could not be parsed as a note.
      *
@@ -1555,9 +1555,9 @@
      * aftertouch. For a channel-wide aftertouch message, use
      * [`sendChannelAftertouch()`]{@link #sendChannelAftertouch}.
      *
-     * @param note {number|Note|string|number[]|Note[]|string[]} The note(s) for which you are sending
+     * @param note {number|_Note|string|number[]|_Note[]|string[]} The note(s) for which you are sending
      * an aftertouch value. The notes can be specified by using a MIDI note number (`0` - `127`), a
-     * [`Note`](Note) object, a note identifier (e.g. `C3`, `G#4`, `F-1`, `Db7`) or an array of the
+     * [`_Note`](_Note) object, a note identifier (e.g. `C3`, `G#4`, `F-1`, `Db7`) or an array of the
      * previous types. When using a note identifier, octave range must be between `-1` and `9`. The
      * lowest note is `C-1` (MIDI note number `0`) and the highest note is `G9` (MIDI note number
      * `127`).
@@ -2050,13 +2050,13 @@
      * Plays a note or an array of notes on the channel. The first parameter is the note to play. It
      * can be a single value or an array of the following valid values:
      *
-     *  - A [`Note`]{@link Note} object
+     *  - A [`_Note`]{@link _Note} object
      *  - A MIDI note number (integer between `0` and `127`)
      *  - A note name, followed by the octave (e.g. `"C3"`, `"G#4"`, `"F-1"`, `"Db7"`)
      *
      * The `playNote()` method sends a **note on** MIDI message for all specified notes. If a
-     * `duration` is set in the `options` parameter or in the [`Note`]{@link Note} object's
-     * [`duration`]{@link Note#duration} property, it will also schedule a **note off** message
+     * `duration` is set in the `options` parameter or in the [`_Note`]{@link _Note} object's
+     * [`duration`]{@link _Note#duration} property, it will also schedule a **note off** message
      * to end the note after said duration. If no `duration` is set, the note will simply play until
      * a matching **note off** message is sent with [`stopNote()`]{@link OutputChannel#stopNote} or
      * [`sendNoteOff()`]{@link OutputChannel#sendNoteOff}.
@@ -2064,16 +2064,16 @@
      *  The execution of the **note on** command can be delayed by using the `time` property of the
      * `options` parameter.
      *
-     * When using [`Note`]{@link Note} objects, the durations and velocities defined in the
-     * [`Note`]{@link Note} objects have precedence over the ones specified via the method's `options`
+     * When using [`_Note`]{@link _Note} objects, the durations and velocities defined in the
+     * [`_Note`]{@link _Note} objects have precedence over the ones specified via the method's `options`
      * parameter.
      *
      * **Note**: per the MIDI standard, a **note on** message with an attack velocity of `0` is
      * functionally equivalent to a **note off** message.
      *
-     * @param note {number|string|Note|number[]|string[]|Note[]} The note(s) to play. The notes can be
+     * @param note {number|string|_Note|number[]|string[]|_Note[]} The note(s) to play. The notes can be
      * specified by using a MIDI note number (`0` - `127`), a note identifier (e.g. `C3`, `G#4`,
-     * `F-1`, `Db7`), a [`Note`]{@link Note} object or an array of the previous types. When using a
+     * `F-1`, `Db7`), a [`_Note`]{@link _Note} object or an array of the previous types. When using a
      * note identifier, the octave range must be between `-1` and `9`. The lowest note is `C-1` (MIDI
      * note number `0`) and the highest note is `G9` (MIDI note number `127`).
      *
@@ -2132,18 +2132,18 @@
      *
      *  - A MIDI note number (integer between `0` and `127`)
      *  - A note name, followed by the octave (e.g. `"C3"`, `"G#4"`, `"F-1"`, `"Db7"`)
-     *  - A [`Note`]{@link Note} object
+     *  - A [`_Note`]{@link _Note} object
      *
      * The execution of the **note off** command can be delayed by using the `time` property of the
      * `options` parameter.
      *
-     * When using [`Note`]{@link Note} objects, the release velocity defined in the
-     * [`Note`]{@link Note} objects has precedence over the one specified via the method's `options`
+     * When using [`_Note`]{@link _Note} objects, the release velocity defined in the
+     * [`_Note`]{@link _Note} objects has precedence over the one specified via the method's `options`
      * parameter.
      *
-     * @param note {number|string|Note|number[]|string[]|Note[]} The note(s) to stop. The notes can be
+     * @param note {number|string|_Note|number[]|string[]|_Note[]} The note(s) to stop. The notes can be
      * specified by using a MIDI note number (0-127), a note identifier (e.g. C3, G#4, F-1, Db7), a
-     * [`Note`]{@link Note} object or an array of the previous types. When using a note name, octave
+     * [`_Note`]{@link _Note} object or an array of the previous types. When using a note name, octave
      * range must be between -1 and 9. The lowest note is C-1 (MIDI note number 0) and the highest
      * note is G9 (MIDI note number 127).
      *
@@ -2224,12 +2224,12 @@
      *
      *  - A MIDI note number (integer between `0` and `127`)
      *  - A note identifier (e.g. `"C3"`, `"G#4"`, `"F-1"`, `"Db7"`)
-     *  - A [`Note`](Note) object
+     *  - A [`_Note`](_Note) object
      *
      * The execution of the **note off** command can be delayed by using the `time` property of the
      * `options` parameter.
      *
-     * @param note {number|Note|string|number[]|Note[]|string[]} The note(s) to stop. The notes can be
+     * @param note {number|_Note|string|number[]|_Note[]|string[]} The note(s) to stop. The notes can be
      * specified by using a MIDI note number (`0` - `127`), a note identifier (e.g. `C3`, `G#4`, `F-1`,
      * `Db7`) or an array of the previous types. When using a note identifier, octave range must be
      * between `-1` and `9`. The lowest note is `C-1` (MIDI note number `0`) and the highest note is
@@ -2263,28 +2263,28 @@
      * Sends a **note on** message for the specified note(s) on the channel. The first parameter is
      * the note. It can be a single value or an array of the following valid values:
      *
-     *  - A [`Note`]{@link Note} object
+     *  - A [`_Note`]{@link _Note} object
      *  - A MIDI note number (integer between `0` and `127`)
      *  - A note identifier (e.g. `"C3"`, `"G#4"`, `"F-1"`, `"Db7"`)
      *
-     *  When passing a [`Note`]{@link Note}object or a note name, the `octaveOffset` will be applied.
+     *  When passing a [`_Note`]{@link _Note}object or a note name, the `octaveOffset` will be applied.
      *  This is not the case when using a note number. In this case, we assume you know exactly which
      *  MIDI note number should be sent out.
      *
      * The execution of the **note on** command can be delayed by using the `time` property of the
      * `options` parameter.
      *
-     * When using [`Note`]{@link Note} objects, the attack velocity defined in the
-     * [`Note`]{@link Note} objects has precedence over the one specified via the method's `options`
+     * When using [`_Note`]{@link _Note} objects, the attack velocity defined in the
+     * [`_Note`]{@link _Note} objects has precedence over the one specified via the method's `options`
      * parameter. Also, the `duration` is ignored. If you want to also send a **note off** message,
      * use the [`playNote()`]{@link #playNote} method instead.
      *
      * **Note**: As per the MIDI standard, a **note on** message with an attack velocity of `0` is
      * functionally equivalent to a **note off** message.
      *
-     * @param note {number|string|Note|number[]|string[]|Note[]} The note(s) to play. The notes can be
+     * @param note {number|string|_Note|number[]|string[]|_Note[]} The note(s) to play. The notes can be
      * specified by using a MIDI note number (0-127), a note identifier (e.g. C3, G#4, F-1, Db7), a
-     * [`Note`]{@link Note} object or an array of the previous types.
+     * [`_Note`]{@link _Note} object or an array of the previous types.
      *
      * @param {object} [options={}]
      *
@@ -3775,9 +3775,9 @@
      * is a key-specific aftertouch. For a channel-wide aftertouch message, use
      * [`setChannelAftertouch()`]{@link #setChannelAftertouch}.
      *
-     * @param note {number|Note|string|number[]|Note[]|string[]} The note(s) for which you are sending
+     * @param note {number|_Note|string|number[]|_Note[]|string[]} The note(s) for which you are sending
      * an aftertouch value. The notes can be specified by using a MIDI note number (`0` - `127`), a
-     * [`Note`](Note) object, a note identifier (e.g. `C3`, `G#4`, `F-1`, `Db7`) or an array of the
+     * [`_Note`](_Note) object, a note identifier (e.g. `C3`, `G#4`, `F-1`, `Db7`) or an array of the
      * previous types. When using a note identifier, octave range must be between `-1` and `9`. The
      * lowest note is `C-1` (MIDI note number `0`) and the highest note is `G9` (MIDI note number
      * `127`).
@@ -4937,12 +4937,12 @@
      *
      *  - A MIDI note number (integer between `0` and `127`)
      *  - A note identifier (e.g. `"C3"`, `"G#4"`, `"F-1"`, `"Db7"`)
-     *  - A [`Note`](Note) object
+     *  - A [`_Note`](_Note) object
      *
      * The execution of the **note off** command can be delayed by using the `time` property of the
      * `options` parameter.
      *
-     * @param note {number|Note|string|number[]|Note[]|string[]} The note(s) to stop. The notes can be
+     * @param note {number|_Note|string|number[]|_Note[]|string[]} The note(s) to stop. The notes can be
      * specified by using a MIDI note number (`0` - `127`), a note identifier (e.g. `C3`, `G#4`,
      * `F-1`, `Db7`) or an array of the previous types. When using a note identifier, octave range
      * must be between `-1` and `9`. The lowest note is `C-1` (MIDI note number `0`) and the highest
@@ -4997,12 +4997,12 @@
      *
      *  - A MIDI note number (integer between `0` and `127`)
      *  - A note identifier (e.g. `"C3"`, `"G#4"`, `"F-1"`, `"Db7"`)
-     *  - A [`Note`](Note) object
+     *  - A [`_Note`](_Note) object
      *
      * The execution of the **note off** command can be delayed by using the `time` property of the
      * `options` parameter.
      *
-     * @param note {number|Note|string|number[]|Note[]|string[]} The note(s) to stop. The notes can be
+     * @param note {number|_Note|string|number[]|_Note[]|string[]} The note(s) to stop. The notes can be
      * specified by using a MIDI note number (`0` - `127`), a note identifier (e.g. `C3`, `G#4`, `F-1`,
      * `Db7`) or an array of the previous types. When using a note identifier, octave range must be
      * between `-1` and `9`. The lowest note is `C-1` (MIDI note number `0`) and the highest note is
@@ -5046,28 +5046,28 @@
      *
      *  - A MIDI note number (integer between `0` and `127`)
      *  - A note identifier (e.g. `"C3"`, `"G#4"`, `"F-1"`, `"Db7"`)
-     *  - A [`Note`]{@link Note} object
+     *  - A [`_Note`]{@link _Note} object
      *
      * The `playNote()` method sends a **note on** MIDI message for all specified notes on all
      * specified channels. If no channel is specified, it will send to all channels. If a `duration`
-     * is set in the `options` parameter or in the [`Note`]{@link Note} object's
-     * [`duration`]{@link Note#duration} property, it will also schedule a **note off** message to end
+     * is set in the `options` parameter or in the [`_Note`]{@link _Note} object's
+     * [`duration`]{@link _Note#duration} property, it will also schedule a **note off** message to end
      * the note after said duration. If no `duration` is set, the note will simply play until a
      * matching **note off** message is sent with [`stopNote()`]{@link #stopNote}.
      *
      * The execution of the **note on** command can be delayed by using the `time` property of the
      * `options` parameter.
      *
-     * When using [`Note`]{@link Note} objects, the durations and velocities defined in the
-     * [`Note`]{@link Note} objects have precedence over the ones specified via the method's `options`
+     * When using [`_Note`]{@link _Note} objects, the durations and velocities defined in the
+     * [`_Note`]{@link _Note} objects have precedence over the ones specified via the method's `options`
      * parameter.
      *
      * **Note**: As per the MIDI standard, a **note on** message with an attack velocity of `0` is
      * functionally equivalent to a **note off** message.
      *
-     * @param note {number|string|Note|number[]|string[]|Note[]} The note(s) to play. The notes can be
+     * @param note {number|string|_Note|number[]|string[]|_Note[]} The note(s) to play. The notes can be
      * specified by using a MIDI note number (0-127), a note identifier (e.g. C3, G#4, F-1, Db7), a
-     * [`Note`]{@link Note} object or an array of the previous types. When using a note identifier,
+     * [`_Note`]{@link _Note} object or an array of the previous types. When using a note identifier,
      * octave range must be between -1 and 9. The lowest note is C-1 (MIDI note number `0`) and the
      * highest note is G9 (MIDI note number `127`).
      *
@@ -5137,7 +5137,7 @@
      *
      *  - A MIDI note number (integer between `0` and `127`)
      *  - A note identifier (e.g. `"C3"`, `"G#4"`, `"F-1"`, `"Db7"`)
-     *  - A [`Note`](Note) object
+     *  - A [`_Note`](_Note) object
      *
      *  The execution of the **note on** command can be delayed by using the `time` property of the
      * `options` parameter.
@@ -5145,7 +5145,7 @@
      * **Note**: As per the MIDI standard, a **note on** message with an attack velocity of `0` is
      * functionally equivalent to a **note off** message.
      *
-     * @param note {number|Note|string|number[]|Note[]|string[]} The note(s) to stop. The notes can be
+     * @param note {number|_Note|string|number[]|_Note[]|string[]} The note(s) to stop. The notes can be
      * specified by using a MIDI note number (`0` - `127`), a note identifier (e.g. `C3`, `G#4`, `F-1`,
      * `Db7`) or an array of the previous types. When using a note identifier, octave range must be
      * between `-1` and `9`. The lowest note is `C-1` (MIDI note number `0`) and the highest note is
@@ -5187,7 +5187,7 @@
         }
       }
 
-      if (options.channels == undefined) options.channels = Enumerations.MIDI_CHANNEL_NUMBERS; // This actually supports passing a Note object even if, semantically, this does not make sense.
+      if (options.channels == undefined) options.channels = Enumerations.MIDI_CHANNEL_NUMBERS; // This actually supports passing a _Note object even if, semantically, this does not make sense.
 
       Utilities.sanitizeChannels(options.channels).forEach(ch => {
         this.channels[ch].sendNoteOn(note, options);
@@ -5584,15 +5584,15 @@
          * ([`DOMHighResTimeStamp`](https://developer.mozilla.org/en-US/docs/Web/API/DOMHighResTimeStamp))
          * when the event occurred (in milliseconds since the navigation start of the document).
          *
-         * @property {object} note A [`Note`](Note) object containing information such as note name,
+         * @property {object} note A [`_Note`](_Note) object containing information such as note name,
          * octave and release velocity.
          * @property {number} value The release velocity amount expressed as a float between 0 and 1.
          * @property {number} rawValue The release velocity amount expressed as an integer (between 0
          * and 127).
          */
-        // The object created when a noteoff event arrives is a Note with an attack velocity of 0.
+        // The object created when a noteoff event arrives is a _Note with an attack velocity of 0.
 
-        event.note = new Note(Utilities.offsetNumber(data1, this.octaveOffset + this.input.octaveOffset + wm.octaveOffset), {
+        event.note = new _Note(Utilities.offsetNumber(data1, this.octaveOffset + this.input.octaveOffset + wm.octaveOffset), {
           rawAttack: 0,
           rawRelease: data2
         });
@@ -5618,14 +5618,14 @@
          * @property {number} timestamp The moment (DOMHighResTimeStamp) when the event occurred (in
          * milliseconds since the navigation start of the document).
          *
-         * @property {object} note A [`Note`](Note) object containing information such as note name,
+         * @property {object} note A [`_Note`](_Note) object containing information such as note name,
          * octave and release velocity.
          * @property {number} value The attack velocity amount expressed as a float between 0 and 1.
          * @property {number} rawValue The attack velocity amount expressed as an integer (between 0
          * and 127).
          */
 
-        event.note = new Note(Utilities.offsetNumber(data1, this.octaveOffset + this.input.octaveOffset + wm.octaveOffset), {
+        event.note = new _Note(Utilities.offsetNumber(data1, this.octaveOffset + this.input.octaveOffset + wm.octaveOffset), {
           rawAttack: data2
         });
         event.value = Utilities.from7bitToFloat(data2);
@@ -5667,7 +5667,7 @@
         event.rawValue = data2; // This is kept for backwards-compatibility but is gone from the documentation. It will be
         // removed from future versions (@deprecated).
 
-        event.note = new Note(Utilities.offsetNumber(data1, this.octaveOffset + this.input.octaveOffset + wm.octaveOffset));
+        event.note = new _Note(Utilities.offsetNumber(data1, this.octaveOffset + this.input.octaveOffset + wm.octaveOffset));
       } else if (event.type === "controlchange") {
         /**
          * Event emitted when a **control change** MIDI message has been received.
@@ -6310,14 +6310,14 @@
     }
     /**
      * Return the playing status of the specified note. The `note` parameter can be an unsigned
-     * integer (0-127), a note identifier (`"C4"`, `"G#5"`, etc.) or a [`Note`]{@link Note} object.
+     * integer (0-127), a note identifier (`"C4"`, `"G#5"`, etc.) or a [`_Note`]{@link _Note} object.
      *
      * If a  is passed in, the method will take into account any [`octaveOffset`](#octaveOffset)
      * defined.
      *
-     * @param [input] {number|string|Note} The note to get the state for. The
+     * @param [input] {number|string|_Note} The note to get the state for. The
      * [`octaveOffset`](#octaveOffset) will be factored in for note identifiers and
-     * [`Note`]{@link Note} objects.
+     * [`_Note`]{@link _Note} objects.
      * @returns {boolean}
      * @since version 3.0.0
      */
@@ -6325,7 +6325,7 @@
 
     getNoteState(note) {
       // If it's a note object, we simply use the identifier
-      if (note instanceof Note) note = note.identifier;
+      if (note instanceof _Note) note = note.identifier;
       const number = Utilities.guessNoteNumber(note, wm.octaveOffset + this.input.octaveOffset + this.octaveOffset);
       return this.notesState[number];
     }
@@ -8694,7 +8694,7 @@
   exports.Enumerations = Enumerations;
   exports.Forwarder = Forwarder;
   exports.Message = Message;
-  exports.Note = Note;
+  exports._Note = _Note;
   exports.Utilities = Utilities;
   exports.WebMidi = wm;
 
