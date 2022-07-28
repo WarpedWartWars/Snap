@@ -278,6 +278,7 @@ SnapExtensions.primitives.set(
             let keyboard = synth.channels[1];
 
             // Listener for the keyboard, prints midi note number
+            keyboard.removeListener("noteon");
             keyboard.addListener("noteon", e => {
                 window.playNote(e.note.identifier, 0.5, midi_instrument);
             });
