@@ -2866,7 +2866,7 @@ BlockMorph.prototype.toString = function () {
         (this.constructor.name ||
             this.constructor.toString().split(' ')[1].split('(')[0]) +
         ' ("' +
-        this.blockSpec.slice(0, 30) + '...")';
+        this.blockSpec/*.slice(0, 100) + (this.blockSpec.length > 100 ? '...' : '')*/ + '")';
 };
 
 // BlockMorph spec:
