@@ -29,12 +29,12 @@
 
 /*global modules, List, StageMorph, Costume, SpeechSynthesisUtterance, Sound,
 IDE_Morph, CamSnapshotDialogMorph, SoundRecorderDialogMorph, isSnapObject, nop,
-Color, Process, contains, localize, SnapTranslator, isString, detect,
-SVG_Costume*/
+Color, Process, contains, localize, SnapTranslator, isString, detect, Point,
+SVG_Costume, newCanvas, WatcherMorph*/
 
 /*jshint esversion: 11, bitwise: false*/
 
-modules.extensions = '2022-April-25';
+modules.extensions = '2022-July-11';
 
 // Global stuff
 
@@ -46,7 +46,7 @@ var SnapExtensions = {
         'libraries/',
         'https://snap.berkeley.edu/',
         'https://ecraft2learn.github.io/ai/', // Uni-Oxford, Ken Kahn
-        'https://microworld.edc.org' // EDC, E. Paul Goldenberg
+        'https://microworld.edc.org/' // EDC, E. Paul Goldenberg
     ]
 };
 
@@ -672,6 +672,28 @@ SnapExtensions.primitives.set(
 // Costumes (cst_):
 
 SnapExtensions.primitives.set(
+    'cst_load(url)',
+    function (url, proc) {
+        if (!proc.context.accumulator) {
+            proc.context.accumulator = {
+                img: new Image(),
+                cst: null,
+            };
+            proc.context.accumulator.img.onload = function () {
+                var canvas = newCanvas(new Point(this.width, this.height));
+                canvas.getContext('2d').drawImage(this, 0, 0);
+                proc.context.accumulator.cst = new Costume(canvas);
+            };
+            proc.context.accumulator.img.src = url;
+        } else if (proc.context.accumulator.cst) {
+            return proc.context.accumulator.cst;
+        }
+        proc.pushContext('doYield');
+        proc.pushContext();
+    }
+);
+
+SnapExtensions.primitives.set(
     // experimental, will probably be taken out again, don't rely on this
     'cst_embed(cst, data)',
     function (cst, data, proc) {
@@ -710,6 +732,23 @@ SnapExtensions.primitives.set(
             ide.flushBlocksCache('variables'); // b/c of inheritance
             ide.refreshPalette();
         }
+    }
+);
+
+SnapExtensions.primitives.set(
+    'var_names(scope)',
+    function (scope, proc) {
+        var frame;
+        if (scope === 'script') {
+            frame = proc.context.isInCustomBlock() ?
+                        proc.homeContext.variables
+                        : proc.context.outerContext.variables;
+        } else if (scope === 'sprite') {
+            frame = this.variables;
+        } else {
+            frame = this.globalVariables();
+        }
+        return new List(frame.allNames());
     }
 );
 
@@ -775,6 +814,27 @@ SnapExtensions.primitives.set(
     }
 );
 
+SnapExtensions.primitives.set(
+    'var_showing(name)?',
+    function (name, proc) {
+        var stage = this.parentThatIsA(StageMorph),
+            frame = proc.context.isInCustomBlock() ?
+                        proc.homeContext.variables
+                        : proc.context.outerContext.variables,
+            target = frame.silentFind(name),
+            watcher;
+
+        if (!target) {return false; }
+        watcher = detect(
+            stage.children,
+            morph => morph instanceof WatcherMorph &&
+                morph.target === target &&
+                    morph.getter === name
+        );
+        return watcher ? watcher.isVisible : false;
+    }
+);
+
 // IDE (ide_):
 
 SnapExtensions.primitives.set(
@@ -819,7 +879,7 @@ SnapExtensions.primitives.set(
                 );
             }
         }
-        proc.assertType(text, ['text']);
+        proc.assertType(text, ['text', 'number']);
         return localize(text);
     }
 );
@@ -837,7 +897,7 @@ SnapExtensions.primitives.set(
             }
         }
         dict = SnapTranslator.dict[SnapTranslator.language];
-        proc.assertType(text, 'text');
+        proc.assertType(text, ['text', 'number']);
         return detect(
             Object.keys(dict),
             key => dict[key] === text

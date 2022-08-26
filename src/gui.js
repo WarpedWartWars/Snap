@@ -80,17 +80,17 @@ BlockLabelPlaceHolderMorph, SpeechBubbleMorph, XML_Element, WatcherMorph, WHITE,
 BlockRemovalDialogMorph,TableMorph, isSnapObject, isRetinaEnabled, SliderMorph,
 disableRetinaSupport, enableRetinaSupport, isRetinaSupported, MediaRecorder,
 Animation, BoxMorph, BlockDialogMorph, RingMorph, Project, ZERO, BLACK,
-BlockVisibilityDialogMorph, ThreadManager*/
+BlockVisibilityDialogMorph, ThreadManager, isString*/
 
 /*jshint esversion: 6*/
 
 // Global stuff ////////////////////////////////////////////////////////
 
-modules.gui = '2022-April-26';
+modules.gui = '2022-August-04';
 
 // Declarations
 
-var SnapVersion = '7.4.0-dev';
+var SnapVersion = '8.0.0';
 
 var IDE_Morph;
 var ProjectDialogMorph;
@@ -297,6 +297,7 @@ IDE_Morph.prototype.init = function (isAutoFill) {
 
     this.bulkDropInProgress = false; // for handling multiple file-drops
     this.cachedSceneFlag = null; // for importing multiple scenes at once
+    this.isImportingLocalFile = false; // for handling imports of smart pics
 
     // initialize inherited properties:
     IDE_Morph.uber.init.call(this);
@@ -1309,6 +1310,10 @@ IDE_Morph.prototype.createCategories = function () {
     this.categories.buttons = [];
     this.categories.isVisible = flag;
 
+    this.categories.droppedImage = (aCanvas, name, embeddedData) => {
+        this.droppedImage(aCanvas, name, embeddedData, 'categories');
+    };
+
     this.categories.refresh = function () {
         this.buttons.forEach(cat => {
             cat.refresh();
@@ -1592,6 +1597,10 @@ IDE_Morph.prototype.createPalette = function (forSearching) {
         if (droppedMorph instanceof BlockMorph) {
             droppedMorph.destroy();
         }
+    };
+
+    this.palette.droppedImage = (aCanvas, name, embeddedData) => {
+        this.droppedImage(aCanvas, name, embeddedData, 'palette');
     };
 
     this.palette.setWidth(this.logo.width());
@@ -2457,6 +2466,7 @@ IDE_Morph.prototype.reactToWorldResize = function (rect) {
     if (this.filePicker) {
         document.body.removeChild(this.filePicker);
         this.filePicker = null;
+        this.isImportingLocalFile = false;
     }
 };
 
@@ -2471,7 +2481,7 @@ IDE_Morph.prototype.endBulkDrop = function () {
     this.bulkDropInProgress = false;
 };
 
-IDE_Morph.prototype.droppedImage = function (aCanvas, name, embeddedData) {
+IDE_Morph.prototype.droppedImage = function (aCanvas, name, embeddedData, src) {
     var costume = new Costume(
         aCanvas,
         this.currentSprite.newCostumeName(
@@ -2491,6 +2501,21 @@ IDE_Morph.prototype.droppedImage = function (aCanvas, name, embeddedData) {
         return;
     }
 
+    // directly import embedded blocks if the image was dropped on
+    // a scripting area or the palette, otherwise import as costume
+    // (with embedded data)
+    if (!this.isImportingLocalFile &&
+        isString(embeddedData) &&
+        ['scripts', 'palette', 'categories'].includes(src) &&
+        embeddedData[0] === '<' &&
+        ['blocks', 'block', 'script', 'sprite'].some(tag =>
+            embeddedData.slice(1).startsWith(tag))
+    ) {
+        this.isImportingLocalFile = false;
+        return this.droppedText(embeddedData, name, '');
+    }
+
+    this.isImportingLocalFile = false;
     costume.embeddedData = embeddedData || null;
     this.currentSprite.addCostume(costume);
     this.currentSprite.wearCostume(costume);
@@ -4558,6 +4583,7 @@ IDE_Morph.prototype.importLocalFile = function () {
             if (addingScenes) {
                 myself.isAddingNextScene = true;
             }
+            myself.isImportingLocalFile = true;
             world.hand.processDrop(inp.files);
         },
         false
@@ -4835,6 +4861,8 @@ IDE_Morph.prototype.aboutSnap = function () {
         + '\nKyle Hotchkiss: Block search design'
         + '\nBrian Broll: Many bugfixes and optimizations'
         + '\nEckart Modrow: SciSnap! Extension'
+        + '\nBambi Brewer: Birdbrain Robotics Extension Support'
+        + '\nGlen Bull & team: TuneScope Music Extension'
         + '\nIan Reynolds: UI Design, Event Bindings, '
         + 'Sound primitives'
         + '\nJadga Hügle: Icons and countless other contributions'
@@ -4843,7 +4871,13 @@ IDE_Morph.prototype.aboutSnap = function () {
         + '\nLucas Karahadian: Piano Keyboard Design'
         + '\nDavide Della Casa: Morphic Optimizations'
         + '\nAchal Dave: Web Audio'
-        + '\nJoe Otto: Morphic Testing and Debugging';
+        + '\nJoe Otto: Morphic Testing and Debugging'
+        + '\n\n'
+        + 'Jahrd, Derec, and Jamet costumes are watercolor paintings'
+        + '\nby Meghan Taylor and represent characters from her'
+        + '\nwebcomic Prophecy of the Circle, licensed to us only'
+        + '\nfor use in Snap! projects. Meghan also painted the Tad'
+        + '\ncostumes, but that character is in the public domain.';
 
     for (module in modules) {
         if (Object.prototype.hasOwnProperty.call(modules, module)) {
@@ -5945,6 +5979,7 @@ IDE_Morph.prototype.openProject = function (project) {
         project.currentScene || project.scenes.at(1),
         true,  // refresh album
         null, // msg
+        null, // data
         true // pause generic WHEN hat blocks
     );
 };
@@ -5953,6 +5988,7 @@ IDE_Morph.prototype.switchToScene = function (
     scene,
     refreshAlbum,
     msg,
+    data,
     pauseHats
 ) {
     var appMode = this.isAppMode;
@@ -5999,7 +6035,7 @@ IDE_Morph.prototype.switchToScene = function (
     this.controlBar.stopButton.refresh();
     this.world().keyboardFocus = this.stage;
     if (msg) {
-        this.stage.fireChangeOfSceneEvent(msg);
+        this.stage.fireChangeOfSceneEvent(msg, data);
     }
 };
 

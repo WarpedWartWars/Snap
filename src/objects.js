@@ -94,7 +94,7 @@ embedMetadataPNG*/
 
 /*jshint esversion: 6*/
 
-modules.objects = '2022-April-25';
+modules.objects = '2022-August-01';
 
 var SpriteMorph;
 var StageMorph;
@@ -914,6 +914,36 @@ SpriteMorph.prototype.initBlocks = function () {
             spec: 'delete this clone'
         },
 
+        // Custom Blocks & introspection
+        doDefineBlock: {
+            type: 'command',
+            category: 'control',
+            spec: 'define %upvar %s %repRing',
+            defaults: [['block']]
+        },
+        doSetBlockAttribute: {
+            type: 'command',
+            category: 'control',
+            spec: 'set %byob of block %repRing to %s',
+            defaults: [['label']]
+        },
+        doDeleteBlock: {
+            type: 'command',
+            category: 'control',
+            spec: 'delete block %repRing'
+        },
+        reportBlockAttribute: {
+            type: 'reporter',
+            category: 'control',
+            spec: '%block of block %repRing',
+            defaults: [['definition']]
+        },
+        reportThisContext: {
+            type: 'reporter',
+            category: 'control',
+            spec: 'this script'
+        },
+
         // Debugging - pausing
         doPauseAll: {
             type: 'command',
@@ -1092,12 +1122,6 @@ SpriteMorph.prototype.initBlocks = function () {
             category: 'sensing',
             spec: 'microphone %audio',
             defaults: [['volume']]
-        },
-        reportBlockAttribute: {
-            type: 'reporter',
-            category: 'sensing',
-            spec: '%block of block %repRing',
-            defaults: [['definition']]
         },
 
         // Operators
@@ -1909,13 +1933,13 @@ SpriteMorph.prototype.init = function (globals) {
     this.isCorpse = false; // indicate whether a sprite/clone has been deleted
     this.cloneOriginName = '';
 
-    // volume and stereo-pan support, experimental:
+    // volume and stereo-pan support
     this.volume = 100;
     this.gainNode = null; // must be lazily initialized in Chrome, sigh...
     this.pan = 0;
     this.pannerNode = null; // must be lazily initialized in Chrome, sigh...
 
-    // frequency player, experimental
+    // frequency player
     this.freqPlayer = null; // Note, to be lazily initialized
 
     // pen color dimensions support
@@ -2637,6 +2661,12 @@ SpriteMorph.prototype.blockTemplates = function (
         blocks.push('-');
         blocks.push(block('doPauseAll'));
         blocks.push(block('doSwitchToScene'));
+        blocks.push('-');
+        blocks.push(block('doDefineBlock'));
+        blocks.push(block('doDeleteBlock'));
+        blocks.push(block('doSetBlockAttribute'));
+        blocks.push(block('reportBlockAttribute'));
+        blocks.push(block('reportThisContext'));
 
         // for debugging: ///////////////
         if (devMode) {
@@ -2672,6 +2702,7 @@ SpriteMorph.prototype.blockTemplates = function (
         blocks.push(block('doResetTimer'));
         blocks.push(watcherToggle('getTimer'));
         blocks.push(block('getTimer'));
+        blocks.push(block('reportDate'));
         blocks.push('-');
         blocks.push(block('reportAttributeOf'));
 
@@ -2688,9 +2719,6 @@ SpriteMorph.prototype.blockTemplates = function (
         blocks.push('-');
         blocks.push(block('reportGlobalFlag'));
         blocks.push(block('doSetGlobalFlag'));
-        blocks.push('-');
-        blocks.push(block('reportDate'));
-        blocks.push(block('reportBlockAttribute'));
 
         // for debugging: ///////////////
         if (devMode) {
@@ -6417,17 +6445,20 @@ SpriteMorph.prototype.allSendersOf = function (message, receiverName, known) {
 };
 
 SpriteMorph.prototype.allHatBlocksFor = function (message) {
-    if (typeof message === 'number') { message = message.toString(); }
+    if (typeof message === 'number') {
+        message = message.toString();
+    }
     return this.scripts.children.filter(morph => {
         var sel = morph.selector,
             event;
         if (sel) {
             if (sel === 'receiveMessage') {
                 event = morph.inputs()[0].evaluate();
-                return event === message
-                    || (event instanceof Array
-                        && message !== '__shout__go__'
-                        && message !== '__clone__init__');
+                return event === message ||
+                    (event instanceof Array && event[0] == message) ||
+                    (event instanceof Array &&
+                        message !== '__shout__go__' &&
+                        message !== '__clone__init__');
             }
             if (sel === 'receiveGo') {
                 return message === '__shout__go__';
@@ -6797,7 +6828,9 @@ SpriteMorph.prototype.deleteAllBlockInstances = function (definition) {
 };
 
 SpriteMorph.prototype.allBlockInstances = function (definition) {
-    var stage, objects, blocks = [], inDefinitions;
+    var stage, objects,
+        blocks = [],
+        inDefinitions = [];
     if (definition.isGlobal) {
         stage = this.parentThatIsA(StageMorph);
         objects = stage.children.filter(morph =>
@@ -6809,7 +6842,6 @@ SpriteMorph.prototype.allBlockInstances = function (definition) {
                 sprite.allLocalBlockInstances(definition)
             )
         );
-        inDefinitions = [];
         stage.globalBlocks.forEach(def => {
             def.scripts.forEach(eachScript =>
                 eachScript.allChildren().forEach(c => {
@@ -6826,7 +6858,9 @@ SpriteMorph.prototype.allBlockInstances = function (definition) {
                 });
             }
         });
-        return blocks.concat(inDefinitions);
+        return blocks.concat(inDefinitions).concat(
+            stage.allBlockInstancesInData(definition)
+        );
     }
     return this.allLocalBlockInstances(definition);
 };
@@ -6850,7 +6884,9 @@ SpriteMorph.prototype.allDependentInvocationsOf = function (aSpec) {
     this.instances.forEach(sprite =>
         sprite.addAllInvocationsOf(aSpec, blocks)
     );
-    return blocks;
+    return blocks.concat(
+        this.parentThatIsA(StageMorph).allBlockInvocationsInData(aSpec, this)
+    );
 };
 
 SpriteMorph.prototype.allInvocationsOf = function (aSpec) {
@@ -8074,7 +8110,7 @@ StageMorph.prototype.init = function (globals) {
     this.tempo = 60; // bpm
     this.lastMessage = '';
 
-    // volume and stereo-pan support, experimental:
+    // volume and stereo-pan support
     this.volume = 100;
     this.gainNode = null; // must be lazily initialized in Chrome, sigh...
     this.pan = 0;
@@ -8133,10 +8169,10 @@ StageMorph.prototype.init = function (globals) {
     this.mirrorVideo = true;
     this.videoMotion = null;
 
-    // world map client - experimental, transient
+    // world map client, transient
     this.worldMap = new WorldMap();
 
-    // Snap! API event listeners - experimental, transient
+    // Snap! API event listeners, transient
     this.messageCallbacks = {}; // name : [functions]
 
     StageMorph.uber.init.call(this);
@@ -8789,7 +8825,7 @@ StageMorph.prototype.processKeyPress = function (event) {
 StageMorph.prototype.inspectKeyEvent
     = CursorMorph.prototype.inspectKeyEvent;
 
-StageMorph.prototype.fireChangeOfSceneEvent = function (message) {
+StageMorph.prototype.fireChangeOfSceneEvent = function (message, data) {
     var procs = [];
 
     // remove all clones when the green flag event is broadcast
@@ -8800,12 +8836,23 @@ StageMorph.prototype.fireChangeOfSceneEvent = function (message) {
     this.children.concat(this).forEach(morph => {
         if (isSnapObject(morph)) {
             morph.allHatBlocksFor(message).forEach(block => {
-                var varName, varFrame;
+                var choice, varName, varFrame;
                 if (block.selector === 'receiveMessage') {
                     varName = block.inputs()[1].evaluate()[0];
                     if (varName) {
                         varFrame = new VariableFrame();
-                        varFrame.addVar(varName, message);
+                        choice = block.inputs()[0].evaluate();
+                        if (choice instanceof Array &&
+                                choice[0].indexOf('any') === 0) {
+                            varFrame.addVar(
+                                varName,
+                                data !== '' ?
+                                    new List([message, data])
+                                    : message
+                            );
+                        } else {
+                            varFrame.addVar(varName, data);
+                        }
                     }
                     procs.push(this.threads.startProcess(
                         block,
@@ -8839,13 +8886,29 @@ StageMorph.prototype.fireGreenFlagEvent = function () {
     this.removeAllClones();
     this.children.concat(this).forEach(morph => {
         if (isSnapObject(morph)) {
-            morph.allHatBlocksFor('__shout__go__').forEach(block =>
+            morph.allHatBlocksFor('__shout__go__').forEach(block => {
+                var varName, varFrame;
+
+                if (block.selector === 'receiveMessage') {
+                    varName = block.inputs()[1].evaluate()[0];
+                    if (varName) {
+                        varFrame = new VariableFrame();
+                        varFrame.addVar(varName, ''); // empty
+                    }
+                }
+
                 procs.push(this.threads.startProcess(
                     block,
                     morph,
-                    this.isThreadSafe
-                ))
-            );
+                    this.isThreadSafe,
+                    null, // exportResult (bool)
+                    null, // callback
+                    null, // isClicked
+                    null, // rightAway
+                    null, // atomic
+                    varFrame
+                ));
+            });
         }
     });
     if (ide) {
@@ -8855,7 +8918,7 @@ StageMorph.prototype.fireGreenFlagEvent = function () {
 };
 
 StageMorph.prototype.runStopScripts = function () {
-    // experimental: Allow each sprite to run one last step before termination
+    // Allow each sprite to run one last step before termination
     // usage example: Stop a robot or device associated with the sprite
     this.receiveUserInteraction('stopped', true, true);
     this.children.forEach(morph => {
@@ -9109,6 +9172,12 @@ StageMorph.prototype.blockTemplates = function (
         blocks.push('-');
         blocks.push(block('doPauseAll'));
         blocks.push(block('doSwitchToScene'));
+        blocks.push('-');
+        blocks.push(block('doDefineBlock'));
+        blocks.push(block('doDeleteBlock'));
+        blocks.push(block('doSetBlockAttribute'));
+        blocks.push(block('reportBlockAttribute'));
+        blocks.push(block('reportThisContext'));
 
         // for debugging: ///////////////
         if (this.world().isDevMode) {
@@ -9139,6 +9208,7 @@ StageMorph.prototype.blockTemplates = function (
         blocks.push(block('doResetTimer'));
         blocks.push(watcherToggle('getTimer'));
         blocks.push(block('getTimer'));
+        blocks.push(block('reportDate'));
         blocks.push('-');
         blocks.push(block('reportAttributeOf'));
 
@@ -9155,9 +9225,6 @@ StageMorph.prototype.blockTemplates = function (
         blocks.push('-');
         blocks.push(block('reportGlobalFlag'));
         blocks.push(block('doSetGlobalFlag'));
-        blocks.push('-');
-        blocks.push(block('reportDate'));
-        blocks.push(block('reportBlockAttribute'));
 
         // for debugging: ///////////////
         if (this.world().isDevMode) {
@@ -9901,6 +9968,147 @@ StageMorph.prototype.deleteAllBlockInstances
 StageMorph.prototype.allBlockInstances
     = SpriteMorph.prototype.allBlockInstances;
 
+StageMorph.prototype.allBlockInstancesInData = function (definition) {
+    var blocks = [];
+    this.allContextsUsing(definition).forEach(context => {
+        if (context.expression instanceof BlockMorph) {
+            context.expression.allChildren().forEach(c => {
+                if (c.isCustomBlock && (c.definition === definition)) {
+                    blocks.push(c);
+                }
+            });
+        }
+    });
+    return blocks;
+};
+
+StageMorph.prototype.allContextsUsing = function (definition) {
+    var objects,
+        contexts = [],
+        charted = [];
+
+    if (!definition.isGlobal) {return []; }
+
+    function scanVariables(varFrame) {
+        varFrame.names().forEach(vname => {
+            var value = varFrame.getVar(vname);
+            if (value instanceof Context) {
+                scanContext(value);
+            } else if (value instanceof List) {
+                scanList(value);
+            }
+        });
+    }
+
+    function scanContext(context) {
+        if (!charted.includes(context)) {
+            charted.push(context);
+        }
+        if (context.expression instanceof BlockMorph &&
+            context.expression.allChildren().some(c =>
+                c.isCustomBlock && (c.definition === definition))
+        ) {
+            contexts.push(context);
+        }
+    }
+
+    function scanList(list) {
+        if (!charted.includes(list)) {
+            charted.push(list);
+            list.map(each => {
+                if (each instanceof Context) {
+                    scanContext(each);
+                } else if (each instanceof List) {
+                    scanList(each);
+                }
+            });
+        }
+    }
+
+    objects = this.children.filter(morph => morph instanceof SpriteMorph);
+    objects.push(this);
+    scanVariables(this.globalVariables());
+    objects.forEach(sprite => scanVariables(sprite.variables));
+    this.threads.processes.forEach(proc => {
+        if (proc.context instanceof Context) {
+            scanContext(proc.context);
+        }
+    });
+    return contexts;
+};
+
+StageMorph.prototype.allBlockInvocationsInData = function (oldSpec, receiver) {
+    var blocks = [];
+    this.allContextsInvoking(oldSpec, receiver).forEach(context => {
+        if (context.expression instanceof BlockMorph) {
+            context.expression.allChildren().forEach(c => {
+                if (c.isCustomBlock &&
+                    !c.isGlobal &&
+                    (c.blockSpec === oldSpec)
+                ) {
+                    blocks.push(c);
+                }
+            });
+        }
+    });
+    return blocks;
+};
+
+StageMorph.prototype.allContextsInvoking = function (oldSpec, receiver) {
+    var objects,
+        contexts = [],
+        charted = [];
+
+    function scanVariables(varFrame) {
+        varFrame.names().forEach(vname => {
+            var value = varFrame.getVar(vname);
+            if (value instanceof Context) {
+                scanContext(value);
+            } else if (value instanceof List) {
+                scanList(value);
+            }
+        });
+    }
+
+    function scanContext(context) {
+        if (!charted.includes(context)) {
+            charted.push(context);
+        }
+        if ((context.receiver === receiver || context.receiver === null) &&
+            context.expression instanceof BlockMorph &&
+            context.expression.allChildren().some(c =>
+                c.isCustomBlock && !c.isGlobal && (c.blockSpec === oldSpec)
+            )
+        ) {
+            contexts.push(context);
+        }
+    }
+
+    function scanList(list) {
+        if (!charted.includes(list)) {
+            charted.push(list);
+            list.map(each => {
+                if (each instanceof Context) {
+                    scanContext(each);
+                } else if (each instanceof List) {
+                    scanList(each);
+                }
+            });
+        }
+    }
+
+    objects = this.children.filter(morph => morph instanceof SpriteMorph);
+    objects.push(this);
+    scanVariables(this.globalVariables());
+    objects.forEach(sprite => scanVariables(sprite.variables));
+    this.threads.processes.forEach(proc => {
+        if (proc.context instanceof Context) {
+            scanContext(proc.context);
+        }
+    });
+    return contexts;
+};
+
 StageMorph.prototype.allLocalBlockInstances
     = SpriteMorph.prototype.allLocalBlockInstances;
 
@@ -10021,6 +10229,74 @@ StageMorph.prototype.globalBlocksSending = function (message, receiverName) {
         }
     });
     return all;
+};
+
+// StageMorph serialization & exporting utils
+
+StageMorph.prototype.toXMLString = function () {
+    // answer an xml string representation of this sprite and all parts
+    // attached to it, including all dependencies (global custom blocks).
+    var ide = this.parentThatIsA(IDE_Morph),
+        dependencies = [],
+        categories = [],
+        blocksXML = '',
+        conversion,
+        xml;
+
+    function collect(item, array) {
+        // only once
+        if (!contains(array, item)) {
+            array.push(item);
+        }
+    }
+
+    function collectAll(items, array) {
+        items.forEach(item => collect(item, array));
+    }
+
+    // collect all dependencies and custom categories.
+    // only collect global custom block dependencies, because the locals
+    // will be included in each sprite's serialization code
+
+    // global block definition in scripts
+    this.scripts.children.filter(
+        morph => morph instanceof BlockMorph
+    ).forEach(script =>
+        collectAll(
+            script.dependencies(true),
+            dependencies
+        )
+    );
+
+    // global block definitions referenced in local block definitions
+    this.customBlocks.forEach(def => {
+        collect(def.category, categories);
+        collectAll(
+            def.collectDependencies([], [], this)
+                .filter(each => each.isGlobal),
+            dependencies
+        );
+    });
+
+    // encode both parts of the export-file:
+    // the blocks library and the sprites
+
+    if (dependencies.length || categories.length) {
+        blocksXML = ide.blocksLibraryXML(dependencies, categories);
+    }
+
+    conversion = this.toXML;
+    this.toXML = this.toSpriteXML;
+    xml = '<sprites app="' +
+        ide.serializer.app +
+        '" version="' +
+        ide.serializer.version +
+        '">' +
+        blocksXML +
+        ide.serializer.serialize([this]) +
+        '</sprites>';
+    this.toXML = conversion;
+    return xml;
 };
 
 // SpriteBubbleMorph ////////////////////////////////////////////////////////
@@ -10278,6 +10554,15 @@ SpriteBubbleMorph.prototype.dataAsMorph = function (data) {
         contents.bounds.setWidth(img.width);
         contents.bounds.setHeight(img.height);
         contents.cachedImage = img;
+        contents.version = data.version;
+        contents.step = function () {
+            if (this.version !== data.version) {
+                img = data.image();
+                this.cachedImage = img;
+                this.version = data.version;
+                this.changed();
+            }
+        };
 
         // support blocks to be dragged out of speech balloons:
         contents.isDraggable = true;
@@ -11708,6 +11993,7 @@ CellMorph.prototype.createContents = function () {
             this.contentsMorph.bounds.setWidth(img.width);
             this.contentsMorph.bounds.setHeight(img.height);
             this.contentsMorph.cachedImage = img;
+            this.version = this.contents.version;
 
             // support blocks to be dragged out of watchers:
             this.contentsMorph.isDraggable = true;
@@ -11843,7 +12129,10 @@ CellMorph.prototype.createContents = function () {
 
 CellMorph.prototype.update = function () {
     // special case for observing sprites
-    if (!isSnapObject(this.contents) && !(this.contents instanceof Costume)) {
+    if (!isSnapObject(this.contents) &&
+        !(this.contents instanceof Costume) &&
+        !(this.contents instanceof Context)
+    ) {
         return;
     }
     if (this.version !== this.contents.version) {

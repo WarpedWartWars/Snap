@@ -185,7 +185,7 @@ SnapTranslator.dict.de = {
     'translator_e-mail':
         'jens@moenig.org, jadga.huegle@sap.com', // optional
     'last_changed':
-        '2022-04-26', // this, too, will appear in the Translators tab
+        '2022-08-03', // this, too, will appear in the Translators tab
 
     // GUI
     // control bar:
@@ -306,7 +306,7 @@ SnapTranslator.dict.de = {
     'turn %counterclockwise %n degrees':
         'drehe %counterclockwise %n Grad',
     'point in direction %dir':
-        'zeige Richtung %dir',
+        'setze Richtung auf %dir Grad',
     'point towards %dst':
         'zeige auf %dst',
     'go to x: %n y: %n':
@@ -531,12 +531,16 @@ SnapTranslator.dict.de = {
         'sende %msg %receive und warte',
     'to':
         'an',
+    'with data':
+        'mit Daten',
     'Message name':
         'Nachricht',
     'message':
         'Nachricht',
     'any message':
         'eine beliebige Nachricht',
+    'data':
+        'Daten',
     'wait %n secs':
         'warte %n Sek.',
     'wait until %b':
@@ -741,6 +745,26 @@ SnapTranslator.dict.de = {
         'benutzerdefiniert?',
     'global?':
         'global?',
+    'type':
+        'Art',
+    'scope':
+        'Bereich',
+    'slots':
+        'Felder',
+    'defaults':
+        'Defaults',
+    'menus':
+        'Menüs',
+    'editables':
+        'Eingaben',
+    'set %byob of block %repRing to %s':
+        'setze %byob von Block %repRing auf %s',
+    'define %upvar %s %repRing':
+        'definiere %upvar %s %repRing',
+    'delete block %repRing':
+        'lösche Block %repRing',
+    'block':
+        'Block',
 
     // operators:
     'sum':
@@ -2098,6 +2122,8 @@ SnapTranslator.dict.de = {
         'Rand unten',
     'position':
         'Position',
+    'variables':
+        'Variablen',
     'costume name':
         'Kostümname',
     'categories':
@@ -2205,5 +2231,8 @@ SnapTranslator.dict.de = {
     'setting the rotation center requires a costume':
         'Der Drehpunkt kann nur zusammen\nmit einem Kostüm gesetzt werden',
     'Web Audio API is not supported\nin this browser':
-        'Das Web Audio API wird von\ndiesem Browser nicht unterstützt'
+        'Das Web Audio API wird von\ndiesem Browser nicht unterstützt',
+    'several block definitions\nalready match this label':
+        'Mehrere Blöcke passen\nzu dieser Aufschrift'
+        
 };
