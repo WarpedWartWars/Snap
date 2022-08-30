@@ -4,5 +4,5 @@
 
 SnapExtensions.primitives.set(
     "pyo_runCode(code)",
-    pyodide.runCode
+    function(code){pyodide.runCode(code););
 );
