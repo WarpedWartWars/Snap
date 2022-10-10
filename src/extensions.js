@@ -244,7 +244,7 @@ SnapExtensions.primitives.set(
         this.changed();
         stage.changed();
     }
-};
+);
 
 // errors & exceptions (err_):
 
