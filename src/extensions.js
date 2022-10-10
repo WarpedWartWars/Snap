@@ -200,6 +200,52 @@ var SnapExtensions = {
 
 // Primitives
 
+SnapExtensions.primitives.set(
+    'wrt_write(text, size, font, bold, italic)',
+    function (text, size, font, bold, italic) {
+        // thanks to Michael Ball for contributing this code!
+        if (typeof text !== 'string' && typeof text !== 'number') {
+            throw new Error(
+                localize('can only write text or numbers, not a') + ' ' +
+                typeof text
+            );
+        }
+
+        var stage = this.parentThatIsA(StageMorph),
+            context = stage.penTrails().getContext('2d'),
+            rotation = radians(this.direction() - 90),
+            trans = new Point(
+                this.rotationCenter().x - stage.left(),
+                this.rotationCenter().y - stage.top()
+            ),
+            len,
+            pos;
+
+        context.save();
+        context.font = bold ? 'bold ' : '';
+        context.font = context.font + italic ? 'italic ' : '';
+        context.font = context.font + size + 'px ' + font;
+        context.textAlign = 'left';
+        context.textBaseline = 'alphabetic';
+        context.fillStyle = this.color.toString();
+        len = context.measureText(text).width;
+        trans = trans.multiplyBy(1 / stage.scale);
+        context.translate(trans.x, trans.y);
+        context.rotate(rotation);
+        context.fillText(text, 0, 0);
+        context.translate(-trans.x, -trans.y);
+        context.restore();
+        pos = new Point(
+            len * Math.sin(radians(this.direction())),
+            len * Math.cos(radians(this.direction()))
+        );
+        pos = pos.add(new Point(this.xPosition(), this.yPosition()));
+        this.gotoXY(pos.x, pos.y, false);
+        this.changed();
+        stage.changed();
+    }
+};
+
 // errors & exceptions (err_):
 
 SnapExtensions.primitives.set(
